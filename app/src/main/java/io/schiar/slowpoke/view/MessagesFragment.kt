@@ -14,7 +14,11 @@ import io.schiar.slowpoke.view.bluetooth.BluetoothCommunicator
 import io.schiar.slowpoke.view.viewdata.MessageViewData
 import io.schiar.slowpoke.viewmodel.MessagesViewModel
 
-class MessagesFragment : Fragment(), Observer<MessageViewData>, View.OnClickListener {
+class MessagesFragment :
+    Fragment(),
+    Observer<MessageViewData>,
+    View.OnClickListener
+{
     private lateinit var viewModel: MessagesViewModel
     private var bluetoothCommunicator: BluetoothCommunicator? = null
     private var lastAdded = -1
@@ -34,6 +38,11 @@ class MessagesFragment : Fragment(), Observer<MessageViewData>, View.OnClickList
         return view
     }
 
+    override fun onStop() {
+        super.onStop()
+        bluetoothCommunicator?.cancel()
+    }
+
     fun registerBluetoothCommunicator(bluetoothCommunicator: BluetoothCommunicator) {
         this.bluetoothCommunicator = bluetoothCommunicator
     }
@@ -51,14 +60,27 @@ class MessagesFragment : Fragment(), Observer<MessageViewData>, View.OnClickList
     }
 
     private fun addMessageToHistory(sent: Boolean, msg: String) {
-        val textView = layoutInflater.inflate(R.layout.message_content, null) as TextView
         val messageHistory = requireView().findViewById<LinearLayout>(R.id.message_history)
-        textView.text = msg
         val messageBalloon = layoutInflater.inflate(
-            if(sent) R.layout.message_sent_balloon else R.layout.message_received_balloon,
-            null
+            if (sent) R.layout.message_sent_balloon else R.layout.message_received_balloon,
+            messageHistory, false
         ) as FrameLayout
+        val textView = layoutInflater.inflate(
+            R.layout.message_content,
+            messageBalloon,
+            false
+        ) as TextView
+        textView.text = msg
+        messageBalloon.layoutParams = messageBalloonLayoutParams(messageBalloon, sent)
+        messageBalloon.addView(textView)
+        messageHistory.addView(messageBalloon)
+        lastAdded = if (sent) 0 else 1
+    }
 
+    private fun messageBalloonLayoutParams(
+        messageBalloon: FrameLayout,
+        sent: Boolean
+    ): LinearLayout.LayoutParams {
         val newLayoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -79,10 +101,7 @@ class MessagesFragment : Fragment(), Observer<MessageViewData>, View.OnClickList
 
         layoutParams.setMargins(leftMargin, topMargin, rightMargin, 0)
         layoutParams.gravity = if(sent) Gravity.END else Gravity.START
-        messageBalloon.layoutParams = layoutParams
-        messageBalloon.addView(textView)
-        messageHistory.addView(messageBalloon)
-        lastAdded = if (sent) 0 else 1
+        return layoutParams
     }
 
     override fun onClick(p0: View?) {

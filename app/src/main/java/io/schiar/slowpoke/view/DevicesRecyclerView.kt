@@ -20,10 +20,6 @@ class DevicesRecyclerView @JvmOverloads constructor(
         this.adapter = DevicesAdapter(listOf())
     }
 
-    fun registerOnDeviceClickListener(onDeviceClickedListener: OnDeviceClickedListener) {
-        this.onDeviceClickedListener = onDeviceClickedListener
-    }
-
     fun setOnDeviceClickListener(onDeviceClickedListener: OnDeviceClickedListener) {
         this.onDeviceClickedListener = onDeviceClickedListener
     }

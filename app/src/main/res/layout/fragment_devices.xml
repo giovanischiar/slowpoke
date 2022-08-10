@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  android:gravity="center"
+  android:layout_gravity="center">
+  <io.schiar.slowpoke.view.DevicesRecyclerView
+    android:id="@+id/devices_recycler_view"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+  <Button
+    android:id="@+id/looking_for_new_devices_btn"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Look for new devices"
+    style="?android:attr/buttonBarButtonStyle" />
+  <Button
+    android:id="@+id/be_visible_for_other_devices_btn"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Be visible for other devices"
+    style="?android:attr/buttonBarButtonStyle" />
+</LinearLayout>

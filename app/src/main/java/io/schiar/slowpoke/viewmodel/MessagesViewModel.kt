@@ -1,10 +1,9 @@
 package io.schiar.slowpoke.viewmodel
 
+import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import io.schiar.slowpoke.view.listeners.OnDeviceClickedListener
-import io.schiar.slowpoke.view.listeners.OnMessageReceivedListener
-import io.schiar.slowpoke.view.listeners.OnMessageSentListener
+import io.schiar.slowpoke.view.listeners.*
 import io.schiar.slowpoke.view.viewdata.DeviceViewData
 import io.schiar.slowpoke.view.viewdata.MessageViewData
 
@@ -16,7 +15,6 @@ class MessagesViewModel :
 {
     private var messageHistory = mutableListOf<MessageViewData>()
     var newMessageViewData = MutableLiveData<MessageViewData>()
-    var currentScreen = MutableLiveData("connection")
     val devices: MutableLiveData<MutableMap<String, DeviceViewData>> by lazy {
         MutableLiveData(mutableMapOf())
     }
@@ -48,6 +46,6 @@ class MessagesViewModel :
 
     fun onRemoteDeviceConnected(name: String, macAddress: String, uuids: List<String>, bond: Boolean) {
         remoteDevice.postValue(DeviceViewData(name, macAddress, uuids, bond))
-        currentScreen.postValue("messages")
     }
+
 }

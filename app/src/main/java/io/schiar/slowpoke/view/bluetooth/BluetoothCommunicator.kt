@@ -14,6 +14,7 @@ class BluetoothCommunicator(
     private val onDeviceConnectedListener: OnDeviceConnectedListener
 )
     : Thread(), OnMessageSentListener, OnBluetoothSocketReceivedListener {
+    private var mmSocket: BluetoothSocket? = null
     private var mmInStream: InputStream? = null
     private var mmOutStream: OutputStream? = null
     private val mmBuffer: ByteArray = ByteArray(1024) // mmBuffer store for the stream
@@ -32,11 +33,11 @@ class BluetoothCommunicator(
     }
 
     fun cancel() {
-//        try {
-//            mmSocket?.close()
-//        } catch (e: IOException) {
-//            println("Could not close the client socket $e")
-//        }
+        try {
+            mmSocket?.close()
+        } catch (e: IOException) {
+            println("Could not close the client socket $e")
+        }
     }
 
     override fun onMessageSent(msg: String) {
@@ -50,6 +51,7 @@ class BluetoothCommunicator(
     }
 
     override fun onBluetoothSocketReceived(bluetoothSocket: BluetoothSocket) {
+        mmSocket = bluetoothSocket
         mmInStream = bluetoothSocket.inputStream
         mmOutStream = bluetoothSocket.outputStream
         onDeviceConnectedListener.onDeviceConnected(bluetoothSocket.remoteDevice)

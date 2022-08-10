@@ -1,14 +1,15 @@
 package io.schiar.slowpoke.view
 
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.textfield.TextInputEditText
 import io.schiar.slowpoke.R
 import io.schiar.slowpoke.view.bluetooth.BluetoothCommunicator
 import io.schiar.slowpoke.view.viewdata.MessageViewData
@@ -21,7 +22,6 @@ class MessagesFragment :
 {
     private lateinit var viewModel: MessagesViewModel
     private var bluetoothCommunicator: BluetoothCommunicator? = null
-    private var lastAdded = -1
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,6 +35,11 @@ class MessagesFragment :
         }
         val view = inflater.inflate(R.layout.fragment_messages, container, false)
         view.findViewById<Button>(R.id.send_message).setOnClickListener(this)
+        view.findViewById<TextInputEditText>(R.id.message_input).doOnTextChanged { text, _, _, _ ->
+            if (text != null) {
+                view.findViewById<Button>(R.id.send_message).isEnabled = text.trim().isNotEmpty()
+            }
+        }
         return view
     }
 
@@ -50,58 +55,14 @@ class MessagesFragment :
     override fun onChanged(messageViewData: MessageViewData?) {
         messageViewData ?: return
         val (sent, msg) = messageViewData
-        addMessageToHistory(sent, msg)
+        val messageHistoryView = requireView().findViewById<MessageHistoryView>(R.id.message_history)
+        messageHistoryView.addMessage(sent, msg)
         scrollScrollViewToEnd()
     }
 
     private fun scrollScrollViewToEnd() {
         val scrollView = requireView().findViewById<ScrollView>(R.id.message_history_scroll_view)
         scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
-    }
-
-    private fun addMessageToHistory(sent: Boolean, msg: String) {
-        val messageHistory = requireView().findViewById<LinearLayout>(R.id.message_history)
-        val messageBalloon = layoutInflater.inflate(
-            if (sent) R.layout.message_sent_balloon else R.layout.message_received_balloon,
-            messageHistory, false
-        ) as FrameLayout
-        val textView = layoutInflater.inflate(
-            R.layout.message_content,
-            messageBalloon,
-            false
-        ) as TextView
-        textView.text = msg
-        messageBalloon.layoutParams = messageBalloonLayoutParams(messageBalloon, sent)
-        messageBalloon.addView(textView)
-        messageHistory.addView(messageBalloon)
-        lastAdded = if (sent) 0 else 1
-    }
-
-    private fun messageBalloonLayoutParams(
-        messageBalloon: FrameLayout,
-        sent: Boolean
-    ): LinearLayout.LayoutParams {
-        val newLayoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        val layoutParams = (messageBalloon.layoutParams ?: newLayoutParams) as LinearLayout.LayoutParams
-
-        val leftMargin = if (sent) 90 else 20
-        val rightMargin = if (sent) 20 else 90
-        val topMargin = if (lastAdded == -1) {
-            0
-        } else {
-            if (sent && lastAdded == 0 || !sent && lastAdded == 1) {
-                10
-            } else {
-                30
-            }
-        }
-
-        layoutParams.setMargins(leftMargin, topMargin, rightMargin, 0)
-        layoutParams.gravity = if(sent) Gravity.END else Gravity.START
-        return layoutParams
     }
 
     override fun onClick(p0: View?) {

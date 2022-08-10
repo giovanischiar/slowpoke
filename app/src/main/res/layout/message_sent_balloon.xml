@@ -3,8 +3,9 @@
   android:id="@+id/message_balloon"
   android:layout_width="wrap_content"
   android:layout_height="wrap_content"
-  android:paddingTop="5dp"
-  android:paddingBottom="5dp"
-  android:paddingStart="5dp"
+  android:paddingTop="@dimen/message_balloon_padding"
+  android:paddingBottom="@dimen/message_balloon_padding"
+  android:paddingStart="@dimen/message_balloon_padding"
   android:paddingEnd="21dp"
+  android:minWidth="50dp"
   android:background="@drawable/message_sent_balloon_shape"/>

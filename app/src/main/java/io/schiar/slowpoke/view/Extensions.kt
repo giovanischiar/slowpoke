@@ -1,6 +1,8 @@
 package io.schiar.slowpoke.view
 
 import android.os.Bundle
+import android.util.DisplayMetrics
+import android.util.TypedValue
 
 fun Bundle?.println() {
     val extras = StringBuilder()
@@ -13,4 +15,12 @@ fun Bundle?.println() {
         }
     }
     println(extras.toString())
+}
+
+fun Float.dp(displayMetrics: DisplayMetrics): Float {
+    return TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        this,
+        displayMetrics
+    )
 }

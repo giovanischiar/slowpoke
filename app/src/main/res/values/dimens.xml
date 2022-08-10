@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <dimen name="space_between_same_sender_messages">2dp</dimen>
+  <dimen name="space_between_different_sender_messages">8dp</dimen>
+  <dimen name="message_balloon_start_margin">5dp</dimen>
+  <dimen name="message_balloon_end_margin">50dp</dimen>
+  <dimen name="message_balloon_border_radius">10dp</dimen>
+  <dimen name="message_balloon_padding">5dp</dimen>
+</resources>

@@ -14,7 +14,7 @@
   <item android:right="16dp">
     <shape android:shape="rectangle" >
       <solid android:color="@color/amber_200" />
-      <corners android:radius="4dp" />
+      <corners android:radius="@dimen/message_balloon_border_radius" />
     </shape>
   </item>
 </layer-list>

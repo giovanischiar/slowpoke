@@ -50,18 +50,21 @@ class DevicesFragment :
         val messagesFragment = requireActivity()
             .supportFragmentManager
             .findFragmentById(R.id.messages_fragment) as MessagesFragment
-        bluetoothResultReceiver.setListeners(this)
-        bluetoothResultReceiver.setMessageListeners(messagesFragment)
+        bluetoothResultReceiver.setDeviceFragmentListeners(this)
+        bluetoothResultReceiver.setMessagesFragmentListeners(messagesFragment)
         serviceIntent.putExtra("onDeviceFoundResultReceiver", bluetoothResultReceiver)
         requireActivity().startService(serviceIntent)
+        setObservers(view)
+        setListeners(view)
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         permissionManager.setPermissionListener(Permission.ACCESS_FINE_LOCATION) {
             permissionManager.setPermissionListener(Permission.BLUETOOTH) {
                 sendServiceAction(Action.START_BLUETOOTH_SERVER)
             }
         }
-        setObservers(view)
-        setListeners(view)
-        return view
     }
 
     private fun sendServiceAction(action: Action) {
@@ -135,7 +138,7 @@ class DevicesFragment :
     }
 
     @SuppressLint("MissingPermission")
-    override fun onDeviceFoundListener(device: BluetoothDevice, bond: Boolean) {
+    override fun onDeviceFind(device: BluetoothDevice, bond: Boolean) {
         permissionManager.setPermissionListener(Permission.BLUETOOTH_CONNECT) {
             val name = device.name ?: "(no name)"
             val macAddress = device.address
@@ -152,7 +155,7 @@ class DevicesFragment :
     }
 
     @SuppressLint("MissingPermission")
-    override fun onDeviceConnected(device: BluetoothDevice) {
+    override fun onDeviceConnect(device: BluetoothDevice) {
         permissionManager.setPermissionListener(Permission.BLUETOOTH_CONNECT) {
             val name = device.name ?: "(no name)"
             val macAddress = device.address

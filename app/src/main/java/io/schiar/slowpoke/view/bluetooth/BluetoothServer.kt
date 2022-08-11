@@ -39,6 +39,12 @@ class BluetoothServer(
         }
     }
 
+    override fun start() {
+        if (state == State.NEW) {
+            super.start()
+        }
+    }
+
     fun cancel() {
         try {
             mmServerSocket?.close()

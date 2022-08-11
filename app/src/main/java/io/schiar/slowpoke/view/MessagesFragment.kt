@@ -12,16 +12,17 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.textfield.TextInputEditText
 import io.schiar.slowpoke.R
-import io.schiar.slowpoke.view.bluetooth.BluetoothCommunicator
 import io.schiar.slowpoke.view.listeners.OnMessageReceivedListener
+import io.schiar.slowpoke.view.listeners.OnMessageSentListener
 import io.schiar.slowpoke.view.viewdata.MessageViewData
 import io.schiar.slowpoke.viewmodel.MessagesViewModel
 
 class MessagesFragment :
     Fragment(),
-    Observer<MessageViewData>,
+    Observer<List<MessageViewData>>,
     View.OnClickListener,
-    OnMessageReceivedListener
+    OnMessageReceivedListener,
+    OnMessageSentListener
 {
     private lateinit var viewModel: MessagesViewModel
 
@@ -45,17 +46,19 @@ class MessagesFragment :
         return view
     }
 
-    override fun onStop() {
-        super.onStop()
-        //bluetoothCommunicator?.cancel()
+    fun retrieveLastMessages() {
+        sendServiceAction(Action.LAST_MESSAGES)
     }
 
-    override fun onChanged(messageViewData: MessageViewData?) {
-        messageViewData ?: return
-        val (sent, msg) = messageViewData
+    override fun onChanged(messagesViewData: List<MessageViewData>?) {
+        messagesViewData ?: return
         val messageHistoryView = requireView().findViewById<MessageHistoryView>(R.id.message_history)
-        messageHistoryView.addMessage(sent, msg)
-        scrollScrollViewToEnd()
+        messageHistoryView.removeAllViews()
+        messagesViewData.forEach {
+            val (sent, msg) = it
+            messageHistoryView.addMessage(sent, msg)
+            scrollScrollViewToEnd()
+        }
     }
 
     private fun scrollScrollViewToEnd() {
@@ -66,11 +69,17 @@ class MessagesFragment :
     override fun onClick(p0: View?) {
         val msg = requireView().findViewById<EditText>(R.id.message_input).text.toString()
         requireView().findViewById<EditText>(R.id.message_input).text.clear()
-        viewModel.onMessageSent(msg)
+        viewModel.onMessageSend(msg)
         val payload = Bundle().apply {
             putString("msg", msg)
         }
         sendServiceActionWithPayload(Action.SEND_MESSAGE, payload)
+    }
+
+    private fun sendServiceAction(action: Action) {
+        val serviceIntent = Intent(requireActivity(), BluetoothService::class.java)
+        serviceIntent.action = action.name
+        requireActivity().startService(serviceIntent)
     }
 
     private fun sendServiceActionWithPayload(action: Action, payload: Bundle) {
@@ -80,7 +89,11 @@ class MessagesFragment :
         requireActivity().startService(serviceIntent)
     }
 
-    override fun onMessageReceived(msg: String) {
-        viewModel.onMessageReceived(msg)
+    override fun onMessageReceive(msg: String) {
+        viewModel.onMessageReceive(msg)
+    }
+
+    override fun onMessageSend(msg: String) {
+        viewModel.onMessageSend(msg)
     }
 }

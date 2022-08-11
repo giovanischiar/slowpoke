@@ -1,6 +1,5 @@
 package io.schiar.slowpoke.viewmodel
 
-import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import io.schiar.slowpoke.view.listeners.*
@@ -13,22 +12,22 @@ class MessagesViewModel :
     OnMessageSentListener,
     OnDeviceClickedListener
 {
-    private var messageHistory = mutableListOf<MessageViewData>()
-    var newMessageViewData = MutableLiveData<MessageViewData>()
+    private var messageHistory = listOf<MessageViewData>()
+    var newMessageViewData = MutableLiveData(messageHistory)
     val devices: MutableLiveData<MutableMap<String, DeviceViewData>> by lazy {
         MutableLiveData(mutableMapOf())
     }
     var remoteDevice = MutableLiveData<DeviceViewData>()
     var clientDevice = MutableLiveData<DeviceViewData>()
 
-    override fun onMessageReceived(msg: String) {
-        messageHistory.add(MessageViewData(false, msg))
-        newMessageViewData.postValue(messageHistory.last())
+    override fun onMessageReceive(msg: String) {
+        messageHistory = messageHistory + MessageViewData(false, msg)
+        newMessageViewData.postValue(messageHistory)
     }
 
-    override fun onMessageSent(msg: String) {
-        messageHistory.add(MessageViewData(true, msg))
-        newMessageViewData.postValue(messageHistory.last())
+    override fun onMessageSend(msg: String) {
+        messageHistory = messageHistory + MessageViewData(true, msg)
+        newMessageViewData.postValue(messageHistory)
     }
 
     fun addNewDevice(name: String, macAddress: String, uuids: List<String>, bond: Boolean) {

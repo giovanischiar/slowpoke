@@ -16,7 +16,7 @@ class BluetoothBroadcastReceiver(
 ) : BroadcastReceiver(), Serializable {
     private var mDeviceQueue: Queue<BluetoothDevice> = LinkedList()
     constructor() : this(UUID.randomUUID(), object : OnDeviceFoundListener {
-        override fun onDeviceFoundListener(device: BluetoothDevice, bond: Boolean) {} }
+        override fun onDeviceFind(device: BluetoothDevice, bond: Boolean) {} }
     )
 
     @SuppressLint("MissingPermission")
@@ -25,7 +25,7 @@ class BluetoothBroadcastReceiver(
         when(action) {
             BluetoothDevice.ACTION_UUID -> {
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return
-                onDeviceFoundListener.onDeviceFoundListener(device, false)
+                onDeviceFoundListener.onDeviceFind(device, false)
                 mDeviceQueue.poll()?.fetchUuidsWithSdp()
             }
 
@@ -33,7 +33,7 @@ class BluetoothBroadcastReceiver(
 
             BluetoothDevice.ACTION_FOUND -> {
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return
-                onDeviceFoundListener.onDeviceFoundListener(device, false)
+                onDeviceFoundListener.onDeviceFind(device, false)
                 mDeviceQueue.add(device)
             }
         }

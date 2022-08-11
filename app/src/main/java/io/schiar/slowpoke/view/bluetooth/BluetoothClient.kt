@@ -25,4 +25,10 @@ class BluetoothClient(
         this.device = device
         this.start()
     }
+
+    override fun start() {
+        if (state == State.NEW) {
+            super.start()
+        }
+    }
 }

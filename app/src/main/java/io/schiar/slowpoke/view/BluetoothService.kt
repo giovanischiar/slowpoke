@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -15,6 +16,8 @@ import android.os.Parcelable
 import android.os.ResultReceiver
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.TaskStackBuilder
+import io.schiar.slowpoke.MainActivity
 import io.schiar.slowpoke.R
 import io.schiar.slowpoke.view.bluetooth.BluetoothBroadcastReceiver
 import io.schiar.slowpoke.view.bluetooth.BluetoothClient
@@ -23,14 +26,18 @@ import io.schiar.slowpoke.view.bluetooth.BluetoothServer
 import io.schiar.slowpoke.view.listeners.OnDeviceConnectedListener
 import io.schiar.slowpoke.view.listeners.OnDeviceFoundListener
 import io.schiar.slowpoke.view.listeners.OnMessageReceivedListener
+import io.schiar.slowpoke.view.viewdata.MessageViewData
 import java.util.*
-import kotlin.random.Random
 
 class BluetoothService: Service(),
     OnDeviceFoundListener,
     OnMessageReceivedListener,
     OnDeviceConnectedListener
 {
+    companion object {
+        private const val NOTIFICATION_NEW_MESSAGE_ID = 1
+    }
+
     private lateinit var uuid: UUID
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothBroadcastReceiver: BluetoothBroadcastReceiver
@@ -38,10 +45,17 @@ class BluetoothService: Service(),
     private lateinit var bluetoothCommunicator: BluetoothCommunicator
     private lateinit var bluetoothServer: BluetoothServer
 
+    private var deviceConnected: BluetoothDevice? = null
+    private var lastMessages = listOf<MessageViewData>()
+    private var lastNewMessages = listOf<String>()
+
+    private lateinit var sharedPreferences: SharedPreferences
+
     private var bluetoothResultReceiver: ResultReceiver? = null
 
     override fun onCreate() {
         createNotificationChannel()
+        sharedPreferences = getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
         uuid = UUID.fromString(resources.getString(R.string.uuid))
         val bluetoothManager = applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
@@ -50,7 +64,6 @@ class BluetoothService: Service(),
         bluetoothClient = BluetoothClient(uuid, bluetoothCommunicator, bluetoothAdapter::cancelDiscovery)
         bluetoothServer = BluetoothServer(uuid, bluetoothAdapter, bluetoothCommunicator)
         registerBroadcastReceiver()
-
     }
 
     @SuppressLint("MissingPermission")
@@ -60,7 +73,7 @@ class BluetoothService: Service(),
         if (parcelableExtra != null) {
             bluetoothResultReceiver = parcelableExtra as ResultReceiver
             bluetoothAdapter.bondedDevices.map {
-                onDeviceFoundListener(it, true)
+                onDeviceFind(it, true)
             }
         }
 
@@ -76,7 +89,18 @@ class BluetoothService: Service(),
             Action.SEND_MESSAGE.name -> {
                 val msg = extras?.getString("msg")
                 if (msg != null) {
-                    bluetoothCommunicator.onMessageSent(msg)
+                    lastMessages = lastMessages + MessageViewData(true, msg)
+                    bluetoothCommunicator.onMessageSend(msg)
+                }
+            }
+            Action.LAST_MESSAGES.name -> {
+                lastNewMessages = listOf()
+                lastMessages.forEach {
+                    if (it.origin) {
+                        sendMessage(it.content)
+                    } else {
+                        receiveMessage(it.content)
+                    }
                 }
             }
         }
@@ -85,19 +109,30 @@ class BluetoothService: Service(),
 
     @SuppressLint("MissingPermission")
     private fun showNotification(title: String, text: String) {
+        val messageName = if (lastNewMessages.size == 1) "message" else "messages"
+        val mainActivityIntent = Intent(this, MainActivity::class.java)
+        if (deviceConnected != null) {
+            mainActivityIntent.putExtra("device", deviceConnected)
+        }
         val intent = Intent(this, BluetoothService::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
         val builder = NotificationCompat.Builder(this, "slowpoke")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentTitle("${lastNewMessages.size} $messageName received")
+            .setContentText(lastNewMessages.last())
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(Notification.DEFAULT_ALL)
+            .setContentIntent(TaskStackBuilder.create(this).run {
+                addNextIntentWithParentStack(mainActivityIntent)
+                getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            })
+
         with(NotificationManagerCompat.from(this)) {
-            notify(Random.nextInt(), builder.build())
+            notify(NOTIFICATION_NEW_MESSAGE_ID, builder.build())
         }
     }
 
@@ -111,17 +146,18 @@ class BluetoothService: Service(),
     }
 
     @SuppressLint("MissingPermission")
-    override fun onDeviceConnected(device: BluetoothDevice) {
+    override fun onDeviceConnect(device: BluetoothDevice) {
         val bundle = Bundle().apply {
             putString("interface", "OnDeviceConnectedListener")
             putParcelable("device", device as Parcelable)
         }
+        deviceConnected = device
         bluetoothResultReceiver?.send(1, bundle)
         println("${device.name} connected lives at ${device.address}")
     }
 
     @SuppressLint("MissingPermission")
-    override fun onDeviceFoundListener(device: BluetoothDevice, bond: Boolean) {
+    override fun onDeviceFind(device: BluetoothDevice, bond: Boolean) {
         println("${device.name} found lives at ${device.address}")
         val bundle = Bundle().apply {
             putString("interface", "OnDeviceFoundListener")
@@ -131,12 +167,32 @@ class BluetoothService: Service(),
         bluetoothResultReceiver?.send(1, bundle)
     }
 
-    override fun onMessageReceived(msg: String) {
+    private fun receiveMessage(msg: String) {
         val bundle = Bundle().apply {
             putString("interface", "OnMessageReceivedListener")
             putString("msg", msg)
         }
         bluetoothResultReceiver?.send(1, bundle)
+    }
+
+    private fun sendMessage(msg: String) {
+        val bundle = Bundle().apply {
+            putString("interface", "OnMessageSentListener")
+            putString("msg", msg)
+        }
+        bluetoothResultReceiver?.send(1, bundle)
+    }
+
+    override fun onMessageReceive(msg: String) {
+        lastMessages = lastMessages + MessageViewData(false, msg)
+        val isActivityShowing = sharedPreferences.getBoolean("isActivityShowing", true)
+        if (!isActivityShowing) {
+            lastNewMessages = lastNewMessages + msg
+            showNotification("message received!", msg)
+            return
+        }
+
+        receiveMessage(msg)
     }
 
     private fun registerBroadcastReceiver() {
@@ -152,7 +208,7 @@ class BluetoothService: Service(),
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
             val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel("slowpoke", name, importance).apply {
                 description = descriptionText
             }

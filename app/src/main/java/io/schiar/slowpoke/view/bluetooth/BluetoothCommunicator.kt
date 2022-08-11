@@ -29,7 +29,7 @@ class BluetoothCommunicator(
                 println("Input stream was disconnected $e")
                 break
             }
-            onMessageReceivedListener.onMessageReceived(String(mmBuffer, 0, numBytes))
+            onMessageReceivedListener.onMessageReceive(String(mmBuffer, 0, numBytes))
         }
     }
 
@@ -41,7 +41,7 @@ class BluetoothCommunicator(
         }
     }
 
-    override fun onMessageSent(msg: String) {
+    override fun onMessageSend(msg: String) {
         val bytes = msg.toByteArray()
         try {
             (mmOutStream ?: return).write(bytes)
@@ -55,7 +55,7 @@ class BluetoothCommunicator(
         mmSocket = bluetoothSocket
         mmInStream = bluetoothSocket.inputStream
         mmOutStream = bluetoothSocket.outputStream
-        onDeviceConnectedListener.onDeviceConnected(bluetoothSocket.remoteDevice)
+        onDeviceConnectedListener.onDeviceConnect(bluetoothSocket.remoteDevice)
         this.start()
     }
 }

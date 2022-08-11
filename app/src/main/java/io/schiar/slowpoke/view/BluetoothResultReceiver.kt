@@ -8,18 +8,21 @@ import android.os.ResultReceiver
 import io.schiar.slowpoke.view.listeners.OnDeviceConnectedListener
 import io.schiar.slowpoke.view.listeners.OnDeviceFoundListener
 import io.schiar.slowpoke.view.listeners.OnMessageReceivedListener
+import io.schiar.slowpoke.view.listeners.OnMessageSentListener
 
 class BluetoothResultReceiver(handler: Handler?) : ResultReceiver(handler) {
-    private var onDeviceFoundResult: OnDeviceFoundListener? = null
+    private var onDeviceFoundListener: OnDeviceFoundListener? = null
     private var onDeviceConnectedListener: OnDeviceConnectedListener? = null
     private var onMessageReceivedListener: OnMessageReceivedListener? = null
+    private var onMessageSentListener: OnMessageSentListener? = null
 
-    fun <T> setMessageListeners(onMessageReceivedListener: T) where T: OnMessageReceivedListener {
-        this.onMessageReceivedListener = onMessageReceivedListener
+    fun <T> setMessagesFragmentListeners(listener: T) where T: OnMessageReceivedListener, T: OnMessageSentListener {
+        this.onMessageReceivedListener = listener
+        this.onMessageSentListener = listener
     }
 
-    fun <T> setListeners(listener: T) where T: OnDeviceFoundListener, T: OnDeviceConnectedListener  {
-        this.onDeviceFoundResult = listener
+    fun <T> setDeviceFragmentListeners(listener: T) where T: OnDeviceFoundListener, T: OnDeviceConnectedListener {
+        this.onDeviceFoundListener = listener
         this.onDeviceConnectedListener = listener
     }
 
@@ -31,7 +34,7 @@ class BluetoothResultReceiver(handler: Handler?) : ResultReceiver(handler) {
                     val bondByte = resultData.getByte("bond")
                     val device = deviceParcelable as BluetoothDevice
                     val bond = bondByte.toInt() == 1
-                    onDeviceFoundResult?.onDeviceFoundListener(device, bond)
+                    onDeviceFoundListener?.onDeviceFind(device, bond)
                 }
             }
 
@@ -39,14 +42,21 @@ class BluetoothResultReceiver(handler: Handler?) : ResultReceiver(handler) {
                 val deviceParcelable = resultData.getParcelable("device") as Parcelable?
                 if (deviceParcelable != null) {
                     val device = deviceParcelable as BluetoothDevice
-                    onDeviceConnectedListener?.onDeviceConnected(device)
+                    onDeviceConnectedListener?.onDeviceConnect(device)
                 }
             }
 
             "OnMessageReceivedListener"-> {
                 val msg = resultData.getString("msg")
                 if (msg != null) {
-                    onMessageReceivedListener?.onMessageReceived(msg)
+                    onMessageReceivedListener?.onMessageReceive(msg)
+                }
+            }
+
+            "OnMessageSentListener" -> {
+                val msg = resultData.getString("msg")
+                if (msg != null) {
+                    onMessageSentListener?.onMessageSend(msg)
                 }
             }
         }

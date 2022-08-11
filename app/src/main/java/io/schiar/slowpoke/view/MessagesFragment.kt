@@ -1,5 +1,6 @@
 package io.schiar.slowpoke.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,16 +13,17 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.textfield.TextInputEditText
 import io.schiar.slowpoke.R
 import io.schiar.slowpoke.view.bluetooth.BluetoothCommunicator
+import io.schiar.slowpoke.view.listeners.OnMessageReceivedListener
 import io.schiar.slowpoke.view.viewdata.MessageViewData
 import io.schiar.slowpoke.viewmodel.MessagesViewModel
 
 class MessagesFragment :
     Fragment(),
     Observer<MessageViewData>,
-    View.OnClickListener
+    View.OnClickListener,
+    OnMessageReceivedListener
 {
     private lateinit var viewModel: MessagesViewModel
-    private var bluetoothCommunicator: BluetoothCommunicator? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,11 +47,7 @@ class MessagesFragment :
 
     override fun onStop() {
         super.onStop()
-        bluetoothCommunicator?.cancel()
-    }
-
-    fun registerBluetoothCommunicator(bluetoothCommunicator: BluetoothCommunicator) {
-        this.bluetoothCommunicator = bluetoothCommunicator
+        //bluetoothCommunicator?.cancel()
     }
 
     override fun onChanged(messageViewData: MessageViewData?) {
@@ -69,6 +67,20 @@ class MessagesFragment :
         val msg = requireView().findViewById<EditText>(R.id.message_input).text.toString()
         requireView().findViewById<EditText>(R.id.message_input).text.clear()
         viewModel.onMessageSent(msg)
-        bluetoothCommunicator?.onMessageSent(msg)
+        val payload = Bundle().apply {
+            putString("msg", msg)
+        }
+        sendServiceActionWithPayload(Action.SEND_MESSAGE, payload)
+    }
+
+    private fun sendServiceActionWithPayload(action: Action, payload: Bundle) {
+        val serviceIntent = Intent(requireActivity(), BluetoothService::class.java)
+        serviceIntent.action = action.name
+        serviceIntent.putExtras(payload)
+        requireActivity().startService(serviceIntent)
+    }
+
+    override fun onMessageReceived(msg: String) {
+        viewModel.onMessageReceived(msg)
     }
 }

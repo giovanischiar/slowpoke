@@ -8,12 +8,13 @@ import io.schiar.slowpoke.view.listeners.OnMessageSentListener
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.Serializable
 
 class BluetoothCommunicator(
     private val onMessageReceivedListener: OnMessageReceivedListener,
     private val onDeviceConnectedListener: OnDeviceConnectedListener
 )
-    : Thread(), OnMessageSentListener, OnBluetoothSocketReceivedListener {
+    : Thread(), OnMessageSentListener, OnBluetoothSocketReceivedListener, Serializable {
     private var mmSocket: BluetoothSocket? = null
     private var mmInStream: InputStream? = null
     private var mmOutStream: OutputStream? = null

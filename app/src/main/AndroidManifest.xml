@@ -30,6 +30,7 @@
       android:name=".view.bluetooth.BluetoothBroadcastReceiver"
       android:exported="true"
       android:permission="android.permission.BLUETOOTH" />
+    <service android:name=".view.BluetoothService" />
   </application>
 
 </manifest>

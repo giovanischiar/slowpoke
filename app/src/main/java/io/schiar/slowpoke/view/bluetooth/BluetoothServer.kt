@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import java.io.IOException
+import java.io.Serializable
 import java.util.*
 
 @SuppressLint("MissingPermission")
@@ -12,7 +13,7 @@ class BluetoothServer(
     private val uuid: UUID,
     private var bluetoothAdapter: BluetoothAdapter,
     private val bluetoothCommunicator: BluetoothCommunicator,
-) : Thread() {
+) : Thread(), Serializable {
     private val mmServerSocket: BluetoothServerSocket? by lazy(LazyThreadSafetyMode.NONE) {
         println("listenUsingInsecureRfcommWithServiceRecord $uuid")
         bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("Slowpoke", uuid)
@@ -29,6 +30,7 @@ class BluetoothServer(
                 shouldLoop = false
                 null
             }
+
             socket?.also {
                 bluetoothCommunicator.onBluetoothSocketReceived(it)
                 mmServerSocket?.close()

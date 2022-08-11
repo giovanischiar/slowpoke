@@ -7,12 +7,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import io.schiar.slowpoke.view.listeners.OnDeviceFoundListener
+import java.io.Serializable
 import java.util.*
 
 class BluetoothBroadcastReceiver(
     private val uuid: UUID,
     private val onDeviceFoundListener: OnDeviceFoundListener
-) : BroadcastReceiver() {
+) : BroadcastReceiver(), Serializable {
     private var mDeviceQueue: Queue<BluetoothDevice> = LinkedList()
     constructor() : this(UUID.randomUUID(), object : OnDeviceFoundListener {
         override fun onDeviceFoundListener(device: BluetoothDevice, bond: Boolean) {} }
@@ -20,9 +21,7 @@ class BluetoothBroadcastReceiver(
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context?, intent: Intent?) {
-        println("Action received!")
         val action = (intent ?: return).action
-        println("Action's name $action")
         when(action) {
             BluetoothDevice.ACTION_UUID -> {
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return

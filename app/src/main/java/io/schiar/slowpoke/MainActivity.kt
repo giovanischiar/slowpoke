@@ -1,6 +1,7 @@
 package io.schiar.slowpoke
 
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast

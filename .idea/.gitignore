@@ -1,3 +1,22 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+
+# Discarding
+*.iml
+*.xml
+
+caches
+libraries
+
+# Retaining
+!compiler.xml
+!gradle.xml
+!runConfigurations.xml
+!vcs.xml
+
+!codeStyles/*.xml
+!dictionaries/*.xml
+!fileTemplates/*.*
+!inspectionProfiles/*.xml
+!runConfigurations/*.xml

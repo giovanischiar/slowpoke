@@ -21,6 +21,10 @@ class BluetoothClient(
         bluetoothCommunicator.onBluetoothSocketReceived(socket)
     }
 
+    fun deviceAlreadyConnected(): Boolean {
+        return device != null
+    }
+
     fun connectDevice(device: BluetoothDevice) {
         this.device = device
         this.start()

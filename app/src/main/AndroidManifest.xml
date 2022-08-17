@@ -33,7 +33,7 @@
       android:exported="true"
       android:permission="android.permission.BLUETOOTH" />
 
-    <service android:name=".view.BluetoothService" />
+    <service android:name=".view.bluetooth.BluetoothService" />
   </application>
 
 </manifest>

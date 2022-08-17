@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  app:startDestination="@id/messagesFragment">
+  <fragment
+    android:id="@+id/devicesFragment"
+    android:name="io.schiar.slowpoke.view.fragments.DevicesFragment"
+    android:label="DevicesFragment"
+    tools:layout="@layout/fragment_devices">
+    <action
+      android:id="@+id/action_devicesFragment_to_conversationFragment"
+      app:destination="@id/conversationFragment" />
+  </fragment>
+  <fragment
+    android:id="@+id/conversationFragment"
+    android:name="io.schiar.slowpoke.view.fragments.ConversationFragment"
+    android:label="ConversationFragment"
+    tools:layout="@layout/fragment_conversation" />
+  <fragment
+    android:id="@+id/messagesFragment"
+    android:name="io.schiar.slowpoke.view.fragments.MessagesFragment"
+    android:label="MessagesFragment"
+    tools:layout="@layout/fragment_messages">
+    <action
+      android:id="@+id/action_messagesFragment_to_devicesFragment"
+      app:destination="@id/devicesFragment" />
+    <action
+      android:id="@+id/action_messagesFragment_to_conversationFragment"
+      app:destination="@id/conversationFragment" />
+  </fragment>
+</navigation>

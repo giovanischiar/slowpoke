@@ -58,4 +58,10 @@ class BluetoothCommunicator(
         onDeviceConnectedListener.onDeviceConnect(bluetoothSocket.remoteDevice)
         this.start()
     }
+
+    override fun start() {
+        if (state == State.NEW) {
+            super.start()
+        }
+    }
 }

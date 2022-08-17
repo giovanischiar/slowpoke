@@ -39,17 +39,17 @@ class BluetoothServer(
         }
     }
 
-    override fun start() {
-        if (state == State.NEW) {
-            super.start()
-        }
-    }
-
     fun cancel() {
         try {
             mmServerSocket?.close()
         } catch (e: IOException) {
             println("slowpoke: Could not close the connect socket $e")
+        }
+    }
+
+    override fun start() {
+        if (state == State.NEW) {
+            super.start()
         }
     }
 }

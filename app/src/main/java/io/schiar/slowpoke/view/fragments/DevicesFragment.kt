@@ -1,10 +1,9 @@
-package io.schiar.slowpoke.view
+package io.schiar.slowpoke.view.fragments
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
 import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
@@ -14,14 +13,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
+import io.schiar.slowpoke.MainActivity
 import io.schiar.slowpoke.Permission
 import io.schiar.slowpoke.R
+import io.schiar.slowpoke.view.*
+import io.schiar.slowpoke.view.bluetooth.BluetoothService
 import io.schiar.slowpoke.view.listeners.OnDeviceClickedListener
 import io.schiar.slowpoke.view.listeners.OnDeviceConnectedListener
 import io.schiar.slowpoke.view.listeners.OnDeviceFoundListener
 import io.schiar.slowpoke.view.viewdata.DeviceViewData
 import io.schiar.slowpoke.viewmodel.MessagesViewModel
-import java.util.*
 
 class DevicesFragment :
     Fragment(),
@@ -30,7 +32,6 @@ class DevicesFragment :
     OnDeviceFoundListener,
     OnDeviceConnectedListener
 {
-    private lateinit var uuid: UUID
     private lateinit var viewModel: MessagesViewModel
     private lateinit var permissionManager: PermissionManager
     private val devices = mutableMapOf<String, BluetoothDevice>()
@@ -40,44 +41,26 @@ class DevicesFragment :
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        uuid = UUID.fromString(resources.getString(R.string.uuid))
         viewModel = ViewModelProvider(requireActivity())[MessagesViewModel::class.java]
         permissionManager = PermissionManager(requireActivity())
         val view = inflater.inflate(R.layout.fragment_devices, container, false)
-
-        val serviceIntent = Intent(requireActivity(), BluetoothService::class.java)
-        val bluetoothResultReceiver = BluetoothResultReceiver(Handler())
-        val messagesFragment = requireActivity()
-            .supportFragmentManager
-            .findFragmentById(R.id.messages_fragment) as MessagesFragment
-        bluetoothResultReceiver.setDeviceFragmentListeners(this)
-        bluetoothResultReceiver.setMessagesFragmentListeners(messagesFragment)
-        serviceIntent.putExtra("onDeviceFoundResultReceiver", bluetoothResultReceiver)
-        requireActivity().startService(serviceIntent)
+        registerResultReceiver()
         setObservers(view)
         setListeners(view)
         return view
     }
 
+    private fun registerResultReceiver() {
+        val serviceIntent = Intent(requireActivity(), BluetoothService::class.java)
+        val resultReceiver = (requireActivity() as MainActivity).resultReceiver
+        resultReceiver.addOnDeviceFoundListener(this)
+        resultReceiver.addOnDeviceConnectedListener(this)
+        serviceIntent.putExtra("resultReceiver", resultReceiver)
+        requireActivity().startService(serviceIntent)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        permissionManager.setPermissionListener(Permission.ACCESS_FINE_LOCATION) {
-            permissionManager.setPermissionListener(Permission.BLUETOOTH) {
-                sendServiceAction(Action.START_BLUETOOTH_SERVER)
-            }
-        }
-    }
-
-    private fun sendServiceAction(action: Action) {
-        val serviceIntent = Intent(requireActivity(), BluetoothService::class.java)
-        serviceIntent.action = action.name
-        requireActivity().startService(serviceIntent)
-    }
-
-    private fun sendServiceActionWithPayload(action: Action, payload: Bundle) {
-        val serviceIntent = Intent(requireActivity(), BluetoothService::class.java)
-        serviceIntent.action = action.name
-        serviceIntent.putExtras(payload)
-        requireActivity().startService(serviceIntent)
+        sendBluetoothServiceAction(Action.BONDED_DEVICES)
     }
 
     private fun setObservers(view: View) {
@@ -103,7 +86,7 @@ class DevicesFragment :
         builder.setPositiveButton("YES") { _, _ ->
             val payload = Bundle()
             payload.putParcelable("device", device as Parcelable)
-            sendServiceActionWithPayload(Action.CONNECT_DEVICE, payload)
+            sendBluetoothServiceAction(Action.CONNECT_DEVICE, payload)
         }
         builder.show()
     }
@@ -127,7 +110,7 @@ class DevicesFragment :
     @SuppressLint("MissingPermission")
     private fun onLookingForNewDevicesClicked() {
         permissionManager.setPermissionListener(Permission.BLUETOOTH_SCAN) {
-            sendServiceAction(Action.START_BLUETOOTH_DISCOVERY)
+            sendBluetoothServiceAction(Action.START_BLUETOOTH_DISCOVERY)
         }
     }
 
@@ -151,7 +134,7 @@ class DevicesFragment :
     }
 
     override fun onDeviceClicked(address: String) {
-        viewModel.onDeviceClicked(address)
+        viewModel.deviceWasClicked(address)
     }
 
     @SuppressLint("MissingPermission")
@@ -163,7 +146,8 @@ class DevicesFragment :
             val uuids = if (device.uuids != null) {
                 device.uuids.map { it.uuid.toString() }
             } else listOf()
-            viewModel.onRemoteDeviceConnected(name, macAddress, uuids, true)
+            viewModel.remoteDeviceWasConnected(name, macAddress, uuids, true)
+            findNavController().navigate(R.id.action_devicesFragment_to_conversationFragment)
         }
     }
 }
